@@ -14,7 +14,7 @@ library(ncdf4)
 setwd("C:/Users/Kaifs/OneDrive/Documents/dropbox_penn/Dropbox/GitHub/ClimateDataIntro/")
 #read PA county shapefile
 pa<-st_read("PaCounty2024_03/PaCounty2024_03.shp")
-plot(pa %>% select(COUNTY_NAM))
+plot(pa %>% dplyr::select(COUNTY_NAM))
 
 #read era5-heat data (utci)
 #remember to extract folder before reading
@@ -44,7 +44,7 @@ utci_obs <- data.frame(cbind(lonlattime, utci_vec_long))
 colnames(utci_obs) <- c('Long','Lat','hour','utci_Kelvin')
 utci_obs$utci_celsisu <- utci_obs$utci_Kelvin - 273.15
 
-#county-specific utci
+#from hourly to daily utci
 utci_obs_ave <- utci_obs %>%
   group_by(Long,Lat) %>%
   summarise(utci_ave = mean(utci_celsisu))
@@ -69,3 +69,9 @@ county_ave <- county_join %>%
   filter(!is.na(COUNTY_NAM)) %>%
   group_by(COUNTY_NAM) %>%
   summarise(utci=mean(utci_ave,na.rm = TRUE))
+
+merge( pa,
+       as.data.frame( county_ave ) %>% dplyr::select( COUNTY_NAM, utci ),
+       by = 'COUNTY_NAM' ) %>%
+  ggplot( ) +
+  geom_sf( aes( fill = utci ))
